@@ -16,6 +16,7 @@ public class chatInterface : MonoBehaviour
         scrollRect=GetComponent<ScrollRect>();    
         inputField=chatPanel.transform.GetChild(2).GetComponent<InputField>();
         content=chatPanel.transform.GetChild(0).GetChild(0).gameObject;
+        
     }
 
     // Update is called once per frame
@@ -25,15 +26,22 @@ public class chatInterface : MonoBehaviour
             chatPanel.SetActive(!chatPanel.activeSelf);
         }
         if(Input.GetKeyDown(KeyCode.LeftAlt)){
+            setText(inputField.text);
+            inputField.text="";
+        }
+    }
+    public void activateChat(){
+        chatPanel.SetActive(true);
+    }
+    public void setText(string txt){
             Debug.Log("H");
             GameObject newText=Instantiate(textPrefab,content.transform);
             //newText.GetComponent<RectTransform>().localPosition=offset;
             newText.GetComponent<RectTransform>().anchoredPosition=new Vector2(0,-50f);
-            newText.GetComponent<Text>().text=inputField.text;
-            inputField.text="";
+            newText.GetComponent<Text>().text=txt;
+            
             for(int i=0;i<content.transform.childCount-1;i++){
                 content.transform.GetChild(i).GetComponent<RectTransform>().anchoredPosition+=offset;
             }
-        }
     }
 }

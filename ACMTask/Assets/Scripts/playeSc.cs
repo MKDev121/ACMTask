@@ -1,13 +1,15 @@
 using System.Collections;
 using System.Collections.Generic;
-using Unity.VisualScripting;
+
+using UnityEditor.SearchService;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.SceneManagement;
 public class playeSc : MonoBehaviour
 {
     InputAction moveAction;
     InputAction mouseAction;
-    CharacterController plController;
+    Rigidbody rb;
     float sp;
     public float speed;
     public float sprintSpeed;
@@ -18,24 +20,52 @@ public class playeSc : MonoBehaviour
     public float jumpForce;
     float verticalVelo;
     PlayerState playerState;
+
+    bool gotTrophy=false;
+    public GameObject trophyInHand;
+    public chatInterface chat;
     // Start is called before the first frame update
     void Start()
     {
         moveAction=InputSystem.actions.FindAction("Move");
-        plController=GetComponent<CharacterController>();
+        rb=GetComponent<Rigidbody>();
         mouseAction=InputSystem.actions.FindAction("Axis");
+        gotTrophy=PlayerPrefs.GetInt("Trophy",0)==1?true:false;
     }
 
     // Update is called once per frame
     void Update()
     {
         Movement();
-
+        getTrohpy();
+        if(Input.GetKeyDown(KeyCode.Escape)){
+            restartLevel();
+        }
+    }
+    void getTrohpy(){
+        Collider[] colliders=Physics.OverlapSphere(transform.position,2f);
+        trophyInHand.SetActive(gotTrophy);
+        foreach(Collider col in colliders){
+            if(col.gameObject.name=="Trophy"){
+                Debug.Log("Trophy Found");
+                if(Input.GetKeyDown(KeyCode.E)){
+                    Destroy(col.gameObject);
+                    PlayerPrefs.SetInt("Trophy",1);
+                    PlayerPrefs.Save();
+                    chat.activateChat();
+                    Debug.Log("Trophy Collected");
+                    chat.setText("Trophy Collected");
+                    
+                    gotTrophy=true;
+                }
+                
+            }
+        }
     }
     void Movement(){
         Vector2 moveValue=moveAction.ReadValue<Vector2>();
         
-        transform.position+=(transform.forward*moveValue.y +transform.right*moveValue.x)*sp*Time.deltaTime;
+        rb.velocity=(transform.forward*moveValue.y +transform.right*moveValue.x)*sp;
 
         float mouse_y=Input.GetAxis("Mouse Y");
         float mouse_x=Input.GetAxis("Mouse X");
@@ -75,22 +105,32 @@ public class playeSc : MonoBehaviour
                 break;
         }
     }
-    void OnControllerColliderHit(ControllerColliderHit hit)
-    {
-        Debug.Log("Hit"+hit.gameObject.name);
-    }
-    void OnCollisionStay(Collision collision)
+
+    void OnCollisionEnter(Collision collision)
     {
         if(collision.gameObject.tag=="Ground"){
             Debug.Log("Grounded");
             Grounded=true;
         }
     }
+    void restartLevel(){
+        SceneManager.LoadScene(0);
+    }
     void OnCollisionExit(Collision collision)
     {
         if(collision.gameObject.tag=="Ground"){
             Debug.Log("Grounded");
             Grounded=false;
+        }
+
+    }
+    void OnTriggerEnter(Collider other)
+    {
+        if(other.name=="Lava"){
+            restartLevel();
+        }
+        if(other.name=="Obs"){
+            restartLevel();
         }
     }
     enum PlayerState
